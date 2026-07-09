@@ -1,6 +1,13 @@
 # Cheta Homemade Website
 
-A Next.js website for **Cheta Homemade** to showcase cakes, pastries, desserts, roti, and craft items with a separate admin panel for content management.
+![Status](https://img.shields.io/badge/status-In%20Progress-yellow)
+![Platform](https://img.shields.io/badge/platform-Web-purple)
+![Framework](https://img.shields.io/badge/framework-Next.js-blue)
+![Backend](https://img.shields.io/badge/backend-Supabase-green)
+![Hosting](https://img.shields.io/badge/hosting-Vercel-black)
+![Version Control](https://img.shields.io/badge/version%20control-GitHub-lightgrey)
+
+A website for **Cheta Homemade** to showcase cakes, pastries, desserts, roti, and craft items with a separate admin panel for content management.
 
 ## Current Version
 
