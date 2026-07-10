@@ -50,7 +50,7 @@ Supabase is **not connected yet**. The project is already structured so Supabase
 
 ## System Architecture
 
-![System Architecture](assets/architecture/system-architecture.jpg)
+![System Architecture](assets/architecture/system-architecture.png)
 
 The Cheta Homemade website adopts a layered web-based architecture that consists of the customer interface, admin interface, application layer, backend service layer, and deployment layer. The frontend is developed using Next.js and hosted on Vercel, while GitHub is used for version control and deployment tracking.
 
