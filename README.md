@@ -7,7 +7,7 @@
 ![Hosting](https://img.shields.io/badge/hosting-Vercel-black)
 ![Version Control](https://img.shields.io/badge/version%20control-GitHub-lightgrey)
 
-A website for **Cheta Homemade** to showcase cakes, pastries, desserts, roti, and craft items with a separate admin panel for content management.
+A personal website I built for my mom’s home-based business, **Cheta Homemade**, to showcase her cakes, pastries, desserts, roti, and craft items. The website includes a separate admin panel concept to make future content management easier, allowing products, notices, and contact information to be managed without directly editing the code.
 
 ## Current Version
 
