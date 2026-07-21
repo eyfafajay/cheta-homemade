@@ -18,7 +18,10 @@ export function ProductsAdminClient() {
     reload();
   }, []);
 
-  const categoryMap = useMemo(() => Object.fromEntries(categories.map((category) => [category.slug, category.name])), [categories]);
+  const categoryMap = useMemo(
+    () => Object.fromEntries(categories.map((category) => [category.slug, `${category.nameMs || category.name} / ${category.nameEn || category.name}`])),
+    [categories]
+  );
 
   function handleDelete(productId: string) {
     const confirmed = confirm("Delete this product?");
@@ -40,7 +43,7 @@ export function ProductsAdminClient() {
       <div className="section-header" style={{ marginBottom: 10 }}>
         <div>
           <h3>Product list</h3>
-          <p className="muted">Manage all product data before Supabase integration.</p>
+          <p className="muted">Manage bilingual product data before Supabase integration.</p>
         </div>
         <Link className="btn btn-primary" href="/admin/products/new">Add product</Link>
       </div>
@@ -62,7 +65,12 @@ export function ProductsAdminClient() {
               const startingPrice = prices.length ? formatPrice(Math.min(...prices)) : "Price TBA";
               return (
                 <tr key={product.id}>
-                  <td><strong>{product.name}</strong><br /><span className="muted">{product.description}</span></td>
+                  <td>
+                    <strong>{product.nameMs || product.name}</strong><br />
+                    <span className="muted">EN: {product.nameEn || product.name}</span><br />
+                    <span className="muted">BM: {product.descriptionMs || product.description}</span><br />
+                    <span className="muted">EN: {product.descriptionEn || product.description}</span>
+                  </td>
                   <td>{categoryMap[product.categorySlug] ?? product.categorySlug}</td>
                   <td>{startingPrice}</td>
                   <td><span className={`badge ${product.isAvailable ? "badge-green" : "badge-muted"}`}>{product.isAvailable ? "Available" : "Unavailable"}</span></td>

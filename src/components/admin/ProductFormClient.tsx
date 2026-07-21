@@ -29,9 +29,11 @@ function optionsToText(options: ProductOption[]) {
 export function ProductFormClient({ productId }: { productId?: string }) {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [name, setName] = useState("");
+  const [nameMs, setNameMs] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [categorySlug, setCategorySlug] = useState("kek");
-  const [description, setDescription] = useState("");
+  const [descriptionMs, setDescriptionMs] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
@@ -44,9 +46,11 @@ export function ProductFormClient({ productId }: { productId?: string }) {
     if (!productId) return;
     const product = getProductById(productId);
     if (!product) return;
-    setName(product.name);
+    setNameMs(product.nameMs || product.name);
+    setNameEn(product.nameEn || product.name);
     setCategorySlug(product.categorySlug);
-    setDescription(product.description);
+    setDescriptionMs(product.descriptionMs || product.description);
+    setDescriptionEn(product.descriptionEn || product.description);
     setImageUrl(product.imageUrl ?? "");
     setIsAvailable(product.isAvailable);
     setIsFeatured(product.isFeatured);
@@ -58,10 +62,14 @@ export function ProductFormClient({ productId }: { productId?: string }) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const product: Product = {
-      id: productId || slugify(name),
+      id: productId || slugify(nameEn || nameMs),
       categorySlug,
-      name,
-      description,
+      name: nameMs || nameEn,
+      nameMs,
+      nameEn,
+      description: descriptionMs || descriptionEn,
+      descriptionMs,
+      descriptionEn,
       imageUrl: imageUrl || undefined,
       isAvailable,
       isFeatured,
@@ -73,30 +81,44 @@ export function ProductFormClient({ productId }: { productId?: string }) {
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
+      <p className="prototype-note">
+        Enter the product name and description in both languages. Customers will automatically see BM or EN based on their language selection.
+      </p>
+
       <div className="form-grid two">
         <label>
-          Product name
-          <input value={name} onChange={(event) => setName(event.target.value)} required placeholder="Example: Brownies" />
+          Product name (Bahasa Melayu)
+          <input value={nameMs} onChange={(event) => setNameMs(event.target.value)} required placeholder="Contoh: Kek Lobak Merah" />
+        </label>
+        <label>
+          Product name (English)
+          <input value={nameEn} onChange={(event) => setNameEn(event.target.value)} required placeholder="Example: Carrot Cake" />
+        </label>
+        <label>
+          Description (Bahasa Melayu)
+          <textarea value={descriptionMs} onChange={(event) => setDescriptionMs(event.target.value)} required placeholder="Penerangan produk ringkas" />
+        </label>
+        <label>
+          Description (English)
+          <textarea value={descriptionEn} onChange={(event) => setDescriptionEn(event.target.value)} required placeholder="Short product description" />
         </label>
         <label>
           Category
           <select value={categorySlug} onChange={(event) => setCategorySlug(event.target.value)}>
             {categories.map((category) => (
-              <option value={category.slug} key={category.id}>{category.name}</option>
+              <option value={category.slug} key={category.id}>
+                {category.nameMs || category.name} / {category.nameEn || category.name}
+              </option>
             ))}
           </select>
-        </label>
-      </div>
-
-      <div className="form-grid" style={{ marginTop: 14 }}>
-        <label>
-          Description
-          <textarea value={description} onChange={(event) => setDescription(event.target.value)} required placeholder="Short product description" />
         </label>
         <label>
           Image URL, optional for now
           <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Later this will use Supabase Storage upload" />
         </label>
+      </div>
+
+      <div className="form-grid" style={{ marginTop: 14 }}>
         <label>
           Price options
           <textarea
@@ -106,7 +128,7 @@ export function ProductFormClient({ productId }: { productId?: string }) {
           />
         </label>
         <p className="prototype-note">
-          Write one option per line using this format: <strong>Label | Price | Notes</strong>. Example: <strong>25 pcs | 36</strong>
+          Write one option per line using this format: <strong>Label | Price | Notes</strong>. Example: <strong>25 pcs | 36</strong>. Size and quantity labels can be shared for both languages.
         </p>
         <label>
           <span>

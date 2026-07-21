@@ -6,8 +6,10 @@ import type { Notice } from "@/lib/types";
 
 export function NoticesAdminClient() {
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [titleMs, setTitleMs] = useState("");
+  const [titleEn, setTitleEn] = useState("");
+  const [messageMs, setMessageMs] = useState("");
+  const [messageEn, setMessageEn] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
@@ -17,9 +19,13 @@ export function NoticesAdminClient() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const notice: Notice = {
-      id: `notice-${slugify(title)}-${Date.now()}`,
-      title,
-      message,
+      id: `notice-${slugify(titleEn || titleMs)}-${Date.now()}`,
+      title: titleMs || titleEn,
+      message: messageMs || messageEn,
+      titleMs,
+      titleEn,
+      messageMs,
+      messageEn,
       isActive
     };
     const nextNotices = isActive
@@ -27,8 +33,10 @@ export function NoticesAdminClient() {
       : [notice, ...notices];
     saveNotices(nextNotices);
     setNotices(nextNotices);
-    setTitle("");
-    setMessage("");
+    setTitleMs("");
+    setTitleEn("");
+    setMessageMs("");
+    setMessageEn("");
     setIsActive(true);
   }
 
@@ -55,23 +63,34 @@ export function NoticesAdminClient() {
     <div className="admin-dashboard-grid">
       <form className="form-card" onSubmit={handleSubmit}>
         <h3>Add notice popup</h3>
-        <div className="form-grid">
+        <p className="prototype-note">
+          Enter the notice in BM and EN. Customers will see the matching version based on their language selection.
+        </p>
+        <div className="form-grid two">
           <label>
-            Notice title
-            <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="Example: Day off notice" />
+            Notice title (Bahasa Melayu)
+            <input value={titleMs} onChange={(event) => setTitleMs(event.target.value)} required placeholder="Contoh: Notis cuti" />
           </label>
           <label>
-            Notice message
-            <textarea value={message} onChange={(event) => setMessage(event.target.value)} required placeholder="Example: We are taking a day off today. Orders will resume tomorrow." />
+            Notice title (English)
+            <input value={titleEn} onChange={(event) => setTitleEn(event.target.value)} required placeholder="Example: Day off notice" />
           </label>
           <label>
-            <span>
-              <input checked={isActive} onChange={(event) => setIsActive(event.target.checked)} type="checkbox" style={{ width: "auto", marginRight: 8 }} />
-              Show this popup on customer website
-            </span>
+            Notice message (Bahasa Melayu)
+            <textarea value={messageMs} onChange={(event) => setMessageMs(event.target.value)} required placeholder="Contoh: Kami bercuti hari ini. Tempahan akan dibuka semula esok." />
           </label>
-          <button className="btn btn-primary" type="submit">Save notice</button>
+          <label>
+            Notice message (English)
+            <textarea value={messageEn} onChange={(event) => setMessageEn(event.target.value)} required placeholder="Example: We are taking a day off today. Orders will resume tomorrow." />
+          </label>
         </div>
+        <label style={{ marginTop: 14 }}>
+          <span>
+            <input checked={isActive} onChange={(event) => setIsActive(event.target.checked)} type="checkbox" style={{ width: "auto", marginRight: 8 }} />
+            Show this popup on customer website
+          </span>
+        </label>
+        <button className="btn btn-primary" type="submit">Save notice</button>
       </form>
 
       <div className="table-card">
@@ -82,8 +101,9 @@ export function NoticesAdminClient() {
               <div className="badge-row">
                 <span className={`badge ${notice.isActive ? "badge-green" : "badge-muted"}`}>{notice.isActive ? "Active" : "Inactive"}</span>
               </div>
-              <h3>{notice.title}</h3>
-              <p>{notice.message}</p>
+              <h3>{notice.titleMs || notice.title}</h3>
+              <p><strong>BM:</strong> {notice.messageMs || notice.message}</p>
+              <p><strong>EN:</strong> {notice.messageEn || notice.message}</p>
               <div className="inline-actions">
                 <button className="btn btn-secondary btn-small" type="button" onClick={() => toggleNotice(notice.id)}>{notice.isActive ? "Turn off" : "Turn on"}</button>
                 <button className="btn btn-danger btn-small" type="button" onClick={() => deleteNotice(notice.id)}>Delete</button>

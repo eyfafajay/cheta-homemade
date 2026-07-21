@@ -1,7 +1,7 @@
 "use client";
 
 import { defaultCategories, defaultContactSettings, defaultNotices, defaultProducts } from "./mock-data";
-import type { Category, ContactSettings, Notice, Product } from "./types";
+import type { Category, ContactSettings, Notice, Product, ProductOption, SiteLanguage } from "./types";
 
 const PRODUCTS_KEY = "cheta_products";
 const CATEGORIES_KEY = "cheta_categories";
@@ -20,6 +20,10 @@ function safeParse<T>(value: string | null, fallback: T): T {
 
 function isBrowser() {
   return typeof window !== "undefined";
+}
+
+function sortCategories(categories: Category[]) {
+  return [...categories].sort((a, b) => (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999));
 }
 
 export function getProducts(): Product[] {
@@ -50,13 +54,27 @@ export function deleteProduct(productId: string) {
 }
 
 export function getCategories(): Category[] {
-  if (!isBrowser()) return defaultCategories;
-  return safeParse<Category[]>(localStorage.getItem(CATEGORIES_KEY), defaultCategories);
+  const categories = !isBrowser()
+    ? defaultCategories
+    : safeParse<Category[]>(localStorage.getItem(CATEGORIES_KEY), defaultCategories);
+  const defaultCategoryMap = Object.fromEntries(defaultCategories.map((category) => [category.slug, category]));
+  return sortCategories(categories.map((category, index) => {
+    const defaults = defaultCategoryMap[category.slug];
+    return {
+      ...category,
+      nameMs: category.nameMs || defaults?.nameMs,
+      nameEn: category.nameEn || defaults?.nameEn,
+      descriptionMs: category.descriptionMs || defaults?.descriptionMs,
+      descriptionEn: category.descriptionEn || defaults?.descriptionEn,
+      sortOrder: category.sortOrder ?? index
+    };
+  }));
 }
 
 export function saveCategories(categories: Category[]) {
   if (!isBrowser()) return;
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  const orderedCategories = categories.map((category, index) => ({ ...category, sortOrder: index }));
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(orderedCategories));
 }
 
 export function getNotices(): Notice[] {
@@ -132,4 +150,70 @@ export function getProductStartingPrice(product: Product) {
 export function buildWhatsAppUrl(phoneNumber: string, message: string) {
   const cleanedNumber = phoneNumber.replace(/[^0-9]/g, "");
   return `https://wa.me/${cleanedNumber || "60XXXXXXXXX"}?text=${encodeURIComponent(message)}`;
+}
+
+export function getLocalizedCategoryName(category: Category, language: SiteLanguage) {
+  return language === "ms"
+    ? category.nameMs || category.name || category.nameEn || category.slug
+    : category.nameEn || category.name || category.nameMs || category.slug;
+}
+
+export function getLocalizedCategoryDescription(category: Category, language: SiteLanguage) {
+  return language === "ms"
+    ? category.descriptionMs || category.description || category.descriptionEn || ""
+    : category.descriptionEn || category.description || category.descriptionMs || "";
+}
+
+export function getLocalizedProductName(product: Product, language: SiteLanguage) {
+  return language === "ms"
+    ? product.nameMs || product.name || product.nameEn
+    : product.nameEn || product.name || product.nameMs;
+}
+
+export function getLocalizedProductDescription(product: Product, language: SiteLanguage) {
+  return language === "ms"
+    ? product.descriptionMs || product.description || product.descriptionEn || ""
+    : product.descriptionEn || product.description || product.descriptionMs || "";
+}
+
+export function getLocalizedOptionLabel(option: ProductOption, language: SiteLanguage) {
+  return language === "ms"
+    ? option.labelMs || option.label || option.labelEn
+    : option.labelEn || option.label || option.labelMs;
+}
+
+export function getLocalizedOptionNotes(option: ProductOption, language: SiteLanguage) {
+  return language === "ms"
+    ? option.notesMs || option.notes || option.notesEn
+    : option.notesEn || option.notes || option.notesMs;
+}
+
+export function getLocalizedNoticeTitle(notice: Notice, language: SiteLanguage) {
+  return language === "ms"
+    ? notice.titleMs || notice.title || notice.titleEn
+    : notice.titleEn || notice.title || notice.titleMs;
+}
+
+export function getLocalizedNoticeMessage(notice: Notice, language: SiteLanguage) {
+  return language === "ms"
+    ? notice.messageMs || notice.message || notice.messageEn
+    : notice.messageEn || notice.message || notice.messageMs;
+}
+
+export function getLocalizedPickupArea(settings: ContactSettings, language: SiteLanguage) {
+  return language === "ms"
+    ? settings.pickupAreaMs || settings.pickupArea || settings.pickupAreaEn
+    : settings.pickupAreaEn || settings.pickupArea || settings.pickupAreaMs;
+}
+
+export function getLocalizedBusinessHours(settings: ContactSettings, language: SiteLanguage) {
+  return language === "ms"
+    ? settings.businessHoursMs || settings.businessHours || settings.businessHoursEn
+    : settings.businessHoursEn || settings.businessHours || settings.businessHoursMs;
+}
+
+export function getLocalizedOrderInstructions(settings: ContactSettings, language: SiteLanguage) {
+  return language === "ms"
+    ? settings.orderInstructionsMs || settings.orderInstructions || settings.orderInstructionsEn
+    : settings.orderInstructionsEn || settings.orderInstructions || settings.orderInstructionsMs;
 }

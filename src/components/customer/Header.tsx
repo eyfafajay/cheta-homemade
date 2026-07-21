@@ -2,15 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { getCategories, getLocalizedCategoryName } from "@/lib/local-store";
+import type { Category } from "@/lib/types";
 import { useLanguage } from "./LanguageProvider";
+
+const categoryIconClass: Record<string, string> = {
+  kek: "dropdown-icon-cakes",
+  desserts: "dropdown-icon-desserts",
+  roti: "dropdown-icon-roti",
+  craft: "dropdown-icon-craft"
+};
 
 export function Header() {
   const { language, setLanguage, t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const navRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const productsDropdownRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    setCategories(getCategories());
+  }, []);
 
   function closeProductsDropdown() {
     productsDropdownRef.current?.removeAttribute("open");
@@ -51,7 +64,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="site-header" ref={headerRef}>
+    <header className="site-header">
       <div className="container navbar">
         <Link className="brand" href="/" onClick={closeNavigation}>
           <span className="brand-mark">CH</span>
@@ -121,25 +134,15 @@ export function Header() {
                 <span>{t("navAllProducts")}</span>
               </Link>
 
-              <Link href="/products/kek" onClick={closeNavigation}>
-                <span className="dropdown-icon dropdown-icon-cakes" aria-hidden="true" />
-                <span>{t("navCakes")}</span>
-              </Link>
-
-              <Link href="/products/desserts" onClick={closeNavigation}>
-                <span className="dropdown-icon dropdown-icon-desserts" aria-hidden="true" />
-                <span>{t("navDesserts")}</span>
-              </Link>
-
-              <Link href="/products/roti" onClick={closeNavigation}>
-                <span className="dropdown-icon dropdown-icon-roti" aria-hidden="true" />
-                <span>{t("navRoti")}</span>
-              </Link>
-
-              <Link href="/products/craft" onClick={closeNavigation}>
-                <span className="dropdown-icon dropdown-icon-craft" aria-hidden="true" />
-                <span>{t("navCraft")}</span>
-              </Link>
+              {categories.map((category) => (
+                <Link href={`/products/${category.slug}`} onClick={closeNavigation} key={category.id}>
+                  <span
+                    className={`dropdown-icon ${categoryIconClass[category.slug] ?? "dropdown-icon-all"}`}
+                    aria-hidden="true"
+                  />
+                  <span>{getLocalizedCategoryName(category, language)}</span>
+                </Link>
+              ))}
             </div>
           </details>
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { getCategories, getProducts } from "@/lib/local-store";
+import { getCategories, getLocalizedCategoryName, getProducts } from "@/lib/local-store";
 import type { Category, Product } from "@/lib/types";
 import { ProductCard } from "./ProductCard";
 import { useLanguage } from "./LanguageProvider";
@@ -10,7 +10,7 @@ import { useLanguage } from "./LanguageProvider";
 export function ProductGridClient({ categorySlug, featuredOnly = false }: { categorySlug?: string; featuredOnly?: boolean }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const { getCategoryLabel, t } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     setProducts(getProducts());
@@ -25,8 +25,8 @@ export function ProductGridClient({ categorySlug, featuredOnly = false }: { cate
   }, [products, categorySlug, featuredOnly]);
 
   const categoryMap = useMemo(() => {
-    return Object.fromEntries(categories.map((category) => [category.slug, getCategoryLabel(category.slug)]));
-  }, [categories, getCategoryLabel]);
+    return Object.fromEntries(categories.map((category) => [category.slug, getLocalizedCategoryName(category, language)]));
+  }, [categories, language]);
 
   return (
     <>
@@ -40,7 +40,7 @@ export function ProductGridClient({ categorySlug, featuredOnly = false }: { cate
             href={`/products/${category.slug}`}
             key={category.id}
           >
-            {getCategoryLabel(category.slug)}
+            {getLocalizedCategoryName(category, language)}
           </Link>
         ))}
       </div>

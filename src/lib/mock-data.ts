@@ -4,26 +4,46 @@ export const defaultCategories: Category[] = [
   {
     id: "cat-kek",
     name: "Kek",
+    nameMs: "Kek",
+    nameEn: "Cakes",
     slug: "kek",
-    description: "Homemade cakes for family events, birthdays, gatherings, and sweet cravings."
+    description: "Kek homemade untuk hari lahir, majlis keluarga, dan sambutan istimewa.",
+    descriptionMs: "Kek homemade untuk hari lahir, majlis keluarga, dan sambutan istimewa.",
+    descriptionEn: "Homemade cakes for family events, birthdays, gatherings, and sweet cravings.",
+    sortOrder: 0
   },
   {
     id: "cat-desserts",
-    name: "Desserts",
+    name: "Pencuci mulut",
+    nameMs: "Pencuci mulut",
+    nameEn: "Desserts",
     slug: "desserts",
-    description: "Creamy, fruity, and bite-sized desserts made for sharing."
+    description: "Pencuci mulut yang creamy, fruity, dan mudah dikongsi bersama keluarga atau tetamu.",
+    descriptionMs: "Pencuci mulut yang creamy, fruity, dan mudah dikongsi bersama keluarga atau tetamu.",
+    descriptionEn: "Creamy, fruity, and bite-sized desserts made for sharing.",
+    sortOrder: 1
   },
   {
     id: "cat-roti",
     name: "Roti",
+    nameMs: "Roti",
+    nameEn: "Bun",
     slug: "roti",
-    description: "Soft homemade breads and savoury buns for everyday treats."
+    description: "Roti homemade yang lembut dan roti berperisa untuk sajian harian.",
+    descriptionMs: "Roti homemade yang lembut dan roti berperisa untuk sajian harian.",
+    descriptionEn: "Soft homemade buns and savoury breads for everyday treats.",
+    sortOrder: 2
   },
   {
     id: "cat-craft",
-    name: "Craft",
+    name: "Kraf",
+    nameMs: "Kraf",
+    nameEn: "Craft",
     slug: "craft",
-    description: "Handmade craft items that can be added and managed by admin later."
+    description: "Item kraf buatan tangan yang boleh dikemas kini oleh admin kemudian.",
+    descriptionMs: "Item kraf buatan tangan yang boleh dikemas kini oleh admin kemudian.",
+    descriptionEn: "Handmade craft items that can be added and managed by admin later.",
+    sortOrder: 3
   }
 ];
 
@@ -302,8 +322,12 @@ export const defaultProducts: Product[] = [
 export const defaultNotices: Notice[] = [
   {
     id: "notice-default",
-    title: "Welcome to Cheta Homemade",
-    message: "Pre-orders are welcome. Please contact us on WhatsApp to check availability before placing an order.",
+    title: "Selamat datang ke Cheta Homemade",
+    titleMs: "Selamat datang ke Cheta Homemade",
+    titleEn: "Welcome to Cheta Homemade",
+    message: "Tempahan awal dialu-alukan. Sila hubungi kami melalui WhatsApp untuk semak ketersediaan sebelum membuat tempahan.",
+    messageMs: "Tempahan awal dialu-alukan. Sila hubungi kami melalui WhatsApp untuk semak ketersediaan sebelum membuat tempahan.",
+    messageEn: "Pre-orders are welcome. Please contact us on WhatsApp to check availability before placing an order.",
     isActive: true
   }
 ];
@@ -313,7 +337,13 @@ export const defaultContactSettings: ContactSettings = {
   phoneNumber: "60XXXXXXXXX",
   instagramUrl: "",
   facebookUrl: "",
-  pickupArea: "Pickup area will be updated soon.",
-  businessHours: "Pre-order basis. Please contact us for availability.",
-  orderInstructions: "Click the WhatsApp button and send us the product name you are interested in."
+  pickupArea: "Kawasan pickup akan dikemas kini tidak lama lagi.",
+  pickupAreaMs: "Kawasan pickup akan dikemas kini tidak lama lagi.",
+  pickupAreaEn: "Pickup area will be updated soon.",
+  businessHours: "Tempahan awal. Sila hubungi kami untuk semak ketersediaan.",
+  businessHoursMs: "Tempahan awal. Sila hubungi kami untuk semak ketersediaan.",
+  businessHoursEn: "Pre-order basis. Please contact us for availability.",
+  orderInstructions: "Klik butang WhatsApp dan hantarkan nama produk yang anda minati.",
+  orderInstructionsMs: "Klik butang WhatsApp dan hantarkan nama produk yang anda minati.",
+  orderInstructionsEn: "Click the WhatsApp button and send us the product name you are interested in."
 };

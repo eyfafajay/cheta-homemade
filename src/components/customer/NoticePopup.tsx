@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getActiveNotice } from "@/lib/local-store";
+import { getActiveNotice, getLocalizedNoticeMessage, getLocalizedNoticeTitle } from "@/lib/local-store";
 import type { Notice } from "@/lib/types";
 import { useLanguage } from "./LanguageProvider";
 
 export function NoticePopup() {
   const [notice, setNotice] = useState<Notice | undefined>();
   const [isOpen, setIsOpen] = useState(false);
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     const activeNotice = getActiveNotice();
@@ -31,8 +31,8 @@ export function NoticePopup() {
     <aside className="notice-toast" role="status" aria-live="polite" aria-labelledby="notice-title">
       <div>
         <span className="notice-kicker">{t("noticeKicker")}</span>
-        <h3 id="notice-title">{notice.title}</h3>
-        <p>{notice.message}</p>
+        <h3 id="notice-title">{getLocalizedNoticeTitle(notice, language)}</h3>
+        <p>{getLocalizedNoticeMessage(notice, language)}</p>
       </div>
       <button className="notice-close" type="button" onClick={closeNotice} aria-label={t("noticeKicker")}>
         ×
