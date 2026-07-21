@@ -6,6 +6,7 @@ import { Footer } from "@/components/customer/Footer";
 import { CategoryCards } from "@/components/customer/CategoryCards";
 import { NoticePopup } from "@/components/customer/NoticePopup";
 import { ProductGridClient } from "@/components/customer/ProductGridClient";
+import { ShowcaseCategories } from "@/components/customer/ShowcaseCategories";
 import { useLanguage } from "@/components/customer/LanguageProvider";
 
 export default function Home() {
@@ -39,31 +40,7 @@ export default function Home() {
                 <p>{t("showcaseBody")}</p>
               </div>
 
-              <div className="showcase-category-row">
-                <Link className="showcase-category" href="/products/kek">
-                  <span>🍰</span>
-                  <strong>{t("navCakes")}</strong>
-                  <small>{t("showcaseCakesDesc")}</small>
-                </Link>
-                <Link className="showcase-category" href="/products/desserts">
-                  <span>🧁</span>
-                  <strong>{t("navDesserts")}</strong>
-                  <small>{t("showcaseDessertsDesc")}</small>
-                </Link>
-              </div>
-
-              <div className="showcase-category-row compact">
-                <Link className="showcase-category" href="/products/roti">
-                  <span>🥐</span>
-                  <strong>{t("navRoti")}</strong>
-                  <small>{t("showcaseRotiDesc")}</small>
-                </Link>
-                <Link className="showcase-category" href="/products/craft">
-                  <span>🎀</span>
-                  <strong>{t("navCraft")}</strong>
-                  <small>{t("showcaseCraftDesc")}</small>
-                </Link>
-              </div>
+              <ShowcaseCategories />
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { getNotices, saveNotices, slugify } from "@/lib/local-store";
+import { createNotice, deleteNotice, fetchNotices, setActiveNotice } from "@/lib/data";
 import type { Notice } from "@/lib/types";
 
 export function NoticesAdminClient() {
@@ -11,52 +11,62 @@ export function NoticesAdminClient() {
   const [messageMs, setMessageMs] = useState("");
   const [messageEn, setMessageEn] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function reload() {
+    setNotices(await fetchNotices());
+  }
 
   useEffect(() => {
-    setNotices(getNotices());
+    void reload().catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load notices."));
   }, []);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const notice: Notice = {
-      id: `notice-${slugify(titleEn || titleMs)}-${Date.now()}`,
-      title: titleMs || titleEn,
-      message: messageMs || messageEn,
-      titleMs,
-      titleEn,
-      messageMs,
-      messageEn,
-      isActive
-    };
-    const nextNotices = isActive
-      ? [notice, ...notices.map((item) => ({ ...item, isActive: false }))]
-      : [notice, ...notices];
-    saveNotices(nextNotices);
-    setNotices(nextNotices);
-    setTitleMs("");
-    setTitleEn("");
-    setMessageMs("");
-    setMessageEn("");
-    setIsActive(true);
+    setSaving(true);
+    setError("");
+    try {
+      await createNotice({
+        titleMs,
+        titleEn,
+        messageMs,
+        messageEn,
+        isActive
+      });
+      await reload();
+      setTitleMs("");
+      setTitleEn("");
+      setMessageMs("");
+      setMessageEn("");
+      setIsActive(true);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to save notice.");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function toggleNotice(noticeId: string) {
-    const selectedNotice = notices.find((notice) => notice.id === noticeId);
-    const nextActiveState = !selectedNotice?.isActive;
-    const nextNotices = notices.map((notice) => ({
-      ...notice,
-      isActive: notice.id === noticeId ? nextActiveState : false
-    }));
-    saveNotices(nextNotices);
-    setNotices(nextNotices);
+  async function toggleNotice(notice: Notice) {
+    setError("");
+    try {
+      await setActiveNotice(notice.id, !notice.isActive);
+      await reload();
+    } catch (toggleError) {
+      setError(toggleError instanceof Error ? toggleError.message : "Unable to update notice.");
+    }
   }
 
-  function deleteNotice(noticeId: string) {
+  async function handleDelete(noticeId: string) {
     const confirmed = confirm("Delete this notice?");
     if (!confirmed) return;
-    const nextNotices = notices.filter((notice) => notice.id !== noticeId);
-    saveNotices(nextNotices);
-    setNotices(nextNotices);
+    setError("");
+    try {
+      await deleteNotice(noticeId);
+      await reload();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete notice.");
+    }
   }
 
   return (
@@ -66,6 +76,7 @@ export function NoticesAdminClient() {
         <p className="prototype-note">
           Enter the notice in BM and EN. Customers will see the matching version based on their language selection.
         </p>
+        {error ? <p className="prototype-note" role="alert">{error}</p> : null}
         <div className="form-grid two">
           <label>
             Notice title (Bahasa Melayu)
@@ -77,11 +88,11 @@ export function NoticesAdminClient() {
           </label>
           <label>
             Notice message (Bahasa Melayu)
-            <textarea value={messageMs} onChange={(event) => setMessageMs(event.target.value)} required placeholder="Contoh: Kami bercuti hari ini. Tempahan akan dibuka semula esok." />
+            <textarea value={messageMs} onChange={(event) => setMessageMs(event.target.value)} required />
           </label>
           <label>
             Notice message (English)
-            <textarea value={messageEn} onChange={(event) => setMessageEn(event.target.value)} required placeholder="Example: We are taking a day off today. Orders will resume tomorrow." />
+            <textarea value={messageEn} onChange={(event) => setMessageEn(event.target.value)} required />
           </label>
         </div>
         <label style={{ marginTop: 14 }}>
@@ -90,7 +101,7 @@ export function NoticesAdminClient() {
             Show this popup on customer website
           </span>
         </label>
-        <button className="btn btn-primary" type="submit">Save notice</button>
+        <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? "Saving..." : "Save notice"}</button>
       </form>
 
       <div className="table-card">
@@ -101,12 +112,12 @@ export function NoticesAdminClient() {
               <div className="badge-row">
                 <span className={`badge ${notice.isActive ? "badge-green" : "badge-muted"}`}>{notice.isActive ? "Active" : "Inactive"}</span>
               </div>
-              <h3>{notice.titleMs || notice.title}</h3>
-              <p><strong>BM:</strong> {notice.messageMs || notice.message}</p>
-              <p><strong>EN:</strong> {notice.messageEn || notice.message}</p>
+              <h3>{notice.titleMs}</h3>
+              <p><strong>BM:</strong> {notice.messageMs}</p>
+              <p><strong>EN:</strong> {notice.messageEn}</p>
               <div className="inline-actions">
-                <button className="btn btn-secondary btn-small" type="button" onClick={() => toggleNotice(notice.id)}>{notice.isActive ? "Turn off" : "Turn on"}</button>
-                <button className="btn btn-danger btn-small" type="button" onClick={() => deleteNotice(notice.id)}>Delete</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => toggleNotice(notice)}>{notice.isActive ? "Turn off" : "Turn on"}</button>
+                <button className="btn btn-danger btn-small" type="button" onClick={() => handleDelete(notice.id)}>Delete</button>
               </div>
             </div>
           ))}

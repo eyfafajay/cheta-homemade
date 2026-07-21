@@ -1,46 +1,59 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { getContactSettings, saveContactSettings } from "@/lib/local-store";
+import { fetchContactSettings, saveContactSettings } from "@/lib/data";
 import type { ContactSettings } from "@/lib/types";
+
+const emptySettings: ContactSettings = {
+  whatsappNumber: "",
+  phoneNumber: "",
+  instagramUrl: "",
+  facebookUrl: "",
+  pickupAreaMs: "",
+  pickupAreaEn: "",
+  businessHoursMs: "",
+  businessHoursEn: "",
+  orderInstructionsMs: "",
+  orderInstructionsEn: ""
+};
 
 export function ContactAdminClient() {
   const [settings, setSettings] = useState<ContactSettings | null>(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const current = getContactSettings();
-    setSettings({
-      ...current,
-      pickupAreaMs: current.pickupAreaMs || current.pickupArea,
-      pickupAreaEn: current.pickupAreaEn || current.pickupArea,
-      businessHoursMs: current.businessHoursMs || current.businessHours,
-      businessHoursEn: current.businessHoursEn || current.businessHours,
-      orderInstructionsMs: current.orderInstructionsMs || current.orderInstructions,
-      orderInstructionsEn: current.orderInstructionsEn || current.orderInstructions
-    });
+    void fetchContactSettings()
+      .then((current) => setSettings(current ?? emptySettings))
+      .catch((loadError) => {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load contact information.");
+        setSettings(emptySettings);
+      });
   }, []);
 
   if (!settings) return null;
 
   function updateField(field: keyof ContactSettings, value: string) {
-    if (!settings) return;
-    setSettings({ ...settings, [field]: value });
+    setSettings((current) => current ? { ...current, [field]: value } : current);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!settings) return;
-    const nextSettings: ContactSettings = {
-      ...settings,
-      pickupArea: settings.pickupAreaMs || settings.pickupAreaEn || settings.pickupArea,
-      businessHours: settings.businessHoursMs || settings.businessHoursEn || settings.businessHours,
-      orderInstructions: settings.orderInstructionsMs || settings.orderInstructionsEn || settings.orderInstructions
-    };
-    saveContactSettings(nextSettings);
-    setSettings(nextSettings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    setError("");
+    const currentSettings = settings;
+    if (!currentSettings) return;
+    try {
+      const nextSettings = await saveContactSettings(currentSettings);
+      setSettings(nextSettings);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to save contact information.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -48,6 +61,7 @@ export function ContactAdminClient() {
       <p className="prototype-note">
         Contact numbers and social links are shared. Pickup information, business hours, and order instructions can be entered separately in BM and EN.
       </p>
+      {error ? <p className="prototype-note" role="alert">{error}</p> : null}
       <div className="form-grid two">
         <label>
           WhatsApp number
@@ -67,33 +81,33 @@ export function ContactAdminClient() {
         </label>
         <label>
           Pickup area (Bahasa Melayu)
-          <input value={settings.pickupAreaMs ?? ""} onChange={(event) => updateField("pickupAreaMs", event.target.value)} placeholder="Contoh: Kawasan pickup akan dikemas kini" />
+          <input value={settings.pickupAreaMs} onChange={(event) => updateField("pickupAreaMs", event.target.value)} />
         </label>
         <label>
           Pickup area (English)
-          <input value={settings.pickupAreaEn ?? ""} onChange={(event) => updateField("pickupAreaEn", event.target.value)} placeholder="Example: Pickup area will be updated" />
+          <input value={settings.pickupAreaEn} onChange={(event) => updateField("pickupAreaEn", event.target.value)} />
         </label>
         <label>
           Business hours (Bahasa Melayu)
-          <input value={settings.businessHoursMs ?? ""} onChange={(event) => updateField("businessHoursMs", event.target.value)} placeholder="Contoh: Isnin–Sabtu, 9 pagi–6 petang" />
+          <input value={settings.businessHoursMs} onChange={(event) => updateField("businessHoursMs", event.target.value)} />
         </label>
         <label>
           Business hours (English)
-          <input value={settings.businessHoursEn ?? ""} onChange={(event) => updateField("businessHoursEn", event.target.value)} placeholder="Example: Monday–Saturday, 9 AM–6 PM" />
+          <input value={settings.businessHoursEn} onChange={(event) => updateField("businessHoursEn", event.target.value)} />
         </label>
       </div>
       <div className="form-grid two" style={{ marginTop: 14 }}>
         <label>
           Order instructions (Bahasa Melayu)
-          <textarea value={settings.orderInstructionsMs ?? ""} onChange={(event) => updateField("orderInstructionsMs", event.target.value)} />
+          <textarea value={settings.orderInstructionsMs} onChange={(event) => updateField("orderInstructionsMs", event.target.value)} />
         </label>
         <label>
           Order instructions (English)
-          <textarea value={settings.orderInstructionsEn ?? ""} onChange={(event) => updateField("orderInstructionsEn", event.target.value)} />
+          <textarea value={settings.orderInstructionsEn} onChange={(event) => updateField("orderInstructionsEn", event.target.value)} />
         </label>
       </div>
       <div className="form-actions" style={{ marginTop: 14 }}>
-        <button className="btn btn-primary" type="submit">Save contact info</button>
+        <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? "Saving..." : "Save contact info"}</button>
         {saved ? <span className="badge badge-green">Saved</span> : null}
       </div>
     </form>

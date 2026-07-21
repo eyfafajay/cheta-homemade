@@ -1693,3 +1693,16 @@ button:disabled,
     grid-template-columns: 1fr;
   }
 }
+
+/* Dynamic showcase categories loaded from Supabase */
+.showcase-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 380px) {
+  .showcase-category-grid {
+    grid-template-columns: 1fr;
+  }
+}

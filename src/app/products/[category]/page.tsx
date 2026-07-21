@@ -6,20 +6,17 @@ import { Footer } from "@/components/customer/Footer";
 import { NoticePopup } from "@/components/customer/NoticePopup";
 import { ProductGridClient } from "@/components/customer/ProductGridClient";
 import { useLanguage } from "@/components/customer/LanguageProvider";
-import { getCategories, getLocalizedCategoryName } from "@/lib/local-store";
+import { fetchCategoryBySlug } from "@/lib/data";
+import { getLocalizedCategoryName } from "@/lib/utils";
 import type { Category } from "@/lib/types";
 
-export default function CategoryPage({
-  params
-}: {
-  params: Promise<{ category: string }>;
-}) {
+export default function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const { category } = use(params);
   const { language, t } = useLanguage();
   const [categoryData, setCategoryData] = useState<Category | undefined>();
 
   useEffect(() => {
-    setCategoryData(getCategories().find((item) => item.slug === category));
+    void fetchCategoryBySlug(category).then(setCategoryData).catch(console.error);
   }, [category]);
 
   return (

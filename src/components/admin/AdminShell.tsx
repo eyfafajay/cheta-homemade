@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { isAdminLoggedIn, logoutAdmin } from "@/lib/local-store";
+import { getCurrentAdmin, signOutAdmin } from "@/lib/data";
 
 const links = [
   { href: "/admin/dashboard", label: "Dashboard" },
@@ -22,41 +22,39 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!isAdminLoggedIn()) {
-      router.replace("/admin/login");
-      return;
-    }
-    setReady(true);
+    void getCurrentAdmin()
+      .then((admin) => {
+        if (!admin) {
+          router.replace("/admin/login");
+          return;
+        }
+        setReady(true);
+      })
+      .catch(() => router.replace("/admin/login"));
   }, [router]);
 
   useEffect(() => {
     function handleOutsideClick(event: PointerEvent) {
       const target = event.target as Node;
-      if (!sidebarRef.current?.contains(target) && !menuButtonRef.current?.contains(target)) {
-        setMenuOpen(false);
-      }
+      if (!sidebarRef.current?.contains(target) && !menuButtonRef.current?.contains(target)) setMenuOpen(false);
     }
-
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") setMenuOpen(false);
     }
-
     document.addEventListener("pointerdown", handleOutsideClick);
     document.addEventListener("keydown", handleEscape);
-
     return () => {
       document.removeEventListener("pointerdown", handleOutsideClick);
       document.removeEventListener("keydown", handleEscape);
     };
   }, []);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+  useEffect(() => setMenuOpen(false), [pathname]);
 
-  function handleLogout() {
-    logoutAdmin();
+  async function handleLogout() {
+    await signOutAdmin();
     router.replace("/admin/login");
+    router.refresh();
   }
 
   if (!ready) return null;
@@ -69,7 +67,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <span className="brand-mark">🍰</span>
             <span>Cheta Admin</span>
           </Link>
-
           <button
             className="admin-menu-toggle"
             type="button"
@@ -78,20 +75,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             aria-controls="admin-navigation"
             onClick={() => setMenuOpen((value) => !value)}
           >
-            <span className="admin-menu-icon" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
+            <span className="admin-menu-icon" aria-hidden="true"><i /><i /><i /></span>
             <strong>Menu</strong>
           </button>
         </div>
 
         <nav className={`admin-nav ${menuOpen ? "open" : ""}`} id="admin-navigation" aria-label="Admin navigation">
           {links.map((link) => (
-            <Link className={pathname === link.href ? "active" : ""} href={link.href} key={link.href}>
-              {link.label}
-            </Link>
+            <Link className={pathname === link.href ? "active" : ""} href={link.href} key={link.href}>{link.label}</Link>
           ))}
           <Link href="/" target="_blank" onClick={() => setMenuOpen(false)}>View customer site</Link>
           <button type="button" onClick={handleLogout}>Logout</button>

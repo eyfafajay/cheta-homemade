@@ -2,8 +2,9 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCategories, getProductById, slugify, upsertProduct } from "@/lib/local-store";
-import type { Category, Product, ProductOption } from "@/lib/types";
+import { fetchCategories, fetchProductById, saveProduct } from "@/lib/data";
+import { slugify } from "@/lib/utils";
+import type { Category, ProductOption } from "@/lib/types";
 
 function parseOptions(value: string): ProductOption[] {
   return value
@@ -17,7 +18,8 @@ function parseOptions(value: string): ProductOption[] {
         id: `${slugify(labelPart || "option")}-${index + 1}`,
         label: labelPart || "Option",
         price,
-        notes: notesPart || undefined
+        notes: notesPart || undefined,
+        sortOrder: index
       };
     });
 }
@@ -31,52 +33,72 @@ export function ProductFormClient({ productId }: { productId?: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [nameMs, setNameMs] = useState("");
   const [nameEn, setNameEn] = useState("");
-  const [categorySlug, setCategorySlug] = useState("kek");
+  const [categorySlug, setCategorySlug] = useState("");
   const [descriptionMs, setDescriptionMs] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imagePath, setImagePath] = useState<string | undefined>();
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>();
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
-  const [optionsText, setOptionsText] = useState("7 inch | 55");
+  const [optionsText, setOptionsText] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isEditing = Boolean(productId);
 
   useEffect(() => {
-    setCategories(getCategories());
-    if (!productId) return;
-    const product = getProductById(productId);
-    if (!product) return;
-    setNameMs(product.nameMs || product.name);
-    setNameEn(product.nameEn || product.name);
-    setCategorySlug(product.categorySlug);
-    setDescriptionMs(product.descriptionMs || product.description);
-    setDescriptionEn(product.descriptionEn || product.description);
-    setImageUrl(product.imageUrl ?? "");
-    setIsAvailable(product.isAvailable);
-    setIsFeatured(product.isFeatured);
-    setOptionsText(optionsToText(product.options));
+    void Promise.all([fetchCategories(), productId ? fetchProductById(productId) : Promise.resolve(undefined)])
+      .then(([nextCategories, product]) => {
+        setCategories(nextCategories);
+        if (!product) {
+          setCategorySlug(nextCategories[0]?.slug ?? "");
+          return;
+        }
+        setNameMs(product.nameMs);
+        setNameEn(product.nameEn);
+        setCategorySlug(product.categorySlug);
+        setDescriptionMs(product.descriptionMs);
+        setDescriptionEn(product.descriptionEn);
+        setImagePath(product.imagePath);
+        setCurrentImageUrl(product.imageUrl);
+        setIsAvailable(product.isAvailable);
+        setIsFeatured(product.isFeatured);
+        setOptionsText(optionsToText(product.options));
+      })
+      .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load product form."));
   }, [productId]);
 
   const previewOptions = useMemo(() => parseOptions(optionsText), [optionsText]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const product: Product = {
-      id: productId || slugify(nameEn || nameMs),
-      categorySlug,
-      name: nameMs || nameEn,
-      nameMs,
-      nameEn,
-      description: descriptionMs || descriptionEn,
-      descriptionMs,
-      descriptionEn,
-      imageUrl: imageUrl || undefined,
-      isAvailable,
-      isFeatured,
-      options: previewOptions.length ? previewOptions : [{ id: "option-1", label: "Price", price: 0 }]
-    };
-    upsertProduct(product);
-    router.push("/admin/products");
+    setSaving(true);
+    setError("");
+    try {
+      if (!categorySlug) throw new Error("Please add a category before saving a product.");
+      await saveProduct(
+        {
+          id: productId,
+          categorySlug,
+          nameMs,
+          nameEn,
+          descriptionMs,
+          descriptionEn,
+          imagePath,
+          isAvailable,
+          isFeatured,
+          options: previewOptions
+        },
+        imageFile
+      );
+      router.push("/admin/products");
+      router.refresh();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to save product.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -84,6 +106,7 @@ export function ProductFormClient({ productId }: { productId?: string }) {
       <p className="prototype-note">
         Enter the product name and description in both languages. Customers will automatically see BM or EN based on their language selection.
       </p>
+      {error ? <p className="prototype-note" role="alert">{error}</p> : null}
 
       <div className="form-grid two">
         <label>
@@ -104,19 +127,30 @@ export function ProductFormClient({ productId }: { productId?: string }) {
         </label>
         <label>
           Category
-          <select value={categorySlug} onChange={(event) => setCategorySlug(event.target.value)}>
+          <select value={categorySlug} onChange={(event) => setCategorySlug(event.target.value)} required>
+            <option value="" disabled>Select category</option>
             {categories.map((category) => (
-              <option value={category.slug} key={category.id}>
-                {category.nameMs || category.name} / {category.nameEn || category.name}
-              </option>
+              <option value={category.slug} key={category.id}>{category.nameMs} / {category.nameEn}</option>
             ))}
           </select>
         </label>
         <label>
-          Image URL, optional for now
-          <input value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Later this will use Supabase Storage upload" />
+          Product image
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+          />
         </label>
       </div>
+
+      {currentImageUrl && !imageFile ? (
+        <div style={{ marginTop: 14 }}>
+          <p className="muted">Current image</p>
+          <img src={currentImageUrl} alt={nameMs || nameEn || "Product"} style={{ width: 180, borderRadius: 18 }} />
+        </div>
+      ) : null}
+      {imageFile ? <p className="prototype-note" style={{ marginTop: 14 }}>Selected image: {imageFile.name}</p> : null}
 
       <div className="form-grid" style={{ marginTop: 14 }}>
         <label>
@@ -128,7 +162,7 @@ export function ProductFormClient({ productId }: { productId?: string }) {
           />
         </label>
         <p className="prototype-note">
-          Write one option per line using this format: <strong>Label | Price | Notes</strong>. Example: <strong>25 pcs | 36</strong>. Size and quantity labels can be shared for both languages.
+          Write one option per line using this format: <strong>Label | Price | Notes</strong>. Size and quantity labels can be shared for both languages.
         </p>
         <label>
           <span>
@@ -143,7 +177,7 @@ export function ProductFormClient({ productId }: { productId?: string }) {
           </span>
         </label>
         <div className="form-actions">
-          <button className="btn btn-primary" type="submit">{isEditing ? "Save product" : "Add product"}</button>
+          <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? "Saving..." : isEditing ? "Save product" : "Add product"}</button>
           <button className="btn btn-secondary" type="button" onClick={() => router.push("/admin/products")}>Cancel</button>
         </div>
       </div>

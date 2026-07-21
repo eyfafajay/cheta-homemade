@@ -14,21 +14,23 @@ const icons: Record<string, string> = {
   craft: "🎀"
 };
 
-export function CategoryCards() {
+export function ShowcaseCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const { language } = useLanguage();
 
   useEffect(() => {
-    void fetchCategories().then(setCategories).catch(console.error);
+    void fetchCategories().then((items) => setCategories(items.slice(0, 4))).catch(console.error);
   }, []);
 
+  if (!categories.length) return null;
+
   return (
-    <div className="category-grid">
+    <div className="showcase-category-grid">
       {categories.map((category) => (
-        <Link href={`/products/${category.slug}`} className="category-card" key={category.id}>
-          <div className="category-icon">{icons[category.slug] ?? "✨"}</div>
-          <h3>{getLocalizedCategoryName(category, language)}</h3>
-          <p className="muted">{getLocalizedCategoryDescription(category, language)}</p>
+        <Link className="showcase-category" href={`/products/${category.slug}`} key={category.id}>
+          <span>{icons[category.slug] ?? "✨"}</span>
+          <strong>{getLocalizedCategoryName(category, language)}</strong>
+          <small>{getLocalizedCategoryDescription(category, language)}</small>
         </Link>
       ))}
     </div>

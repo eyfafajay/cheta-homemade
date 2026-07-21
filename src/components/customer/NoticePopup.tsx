@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getActiveNotice, getLocalizedNoticeMessage, getLocalizedNoticeTitle } from "@/lib/local-store";
+import { fetchActiveNotice } from "@/lib/data";
+import { getLocalizedNoticeMessage, getLocalizedNoticeTitle } from "@/lib/utils";
 import type { Notice } from "@/lib/types";
 import { useLanguage } from "./LanguageProvider";
 
@@ -11,17 +12,17 @@ export function NoticePopup() {
   const { language, t } = useLanguage();
 
   useEffect(() => {
-    const activeNotice = getActiveNotice();
-    const dismissedNoticeId = typeof window !== "undefined" ? sessionStorage.getItem("cheta_dismissed_notice") : null;
-
-    setNotice(activeNotice);
-    setIsOpen(Boolean(activeNotice && dismissedNoticeId !== activeNotice.id));
+    void fetchActiveNotice()
+      .then((activeNotice) => {
+        const dismissedNoticeId = sessionStorage.getItem("cheta_dismissed_notice");
+        setNotice(activeNotice);
+        setIsOpen(Boolean(activeNotice && dismissedNoticeId !== activeNotice.id));
+      })
+      .catch(console.error);
   }, []);
 
   function closeNotice() {
-    if (notice && typeof window !== "undefined") {
-      sessionStorage.setItem("cheta_dismissed_notice", notice.id);
-    }
+    if (notice) sessionStorage.setItem("cheta_dismissed_notice", notice.id);
     setIsOpen(false);
   }
 
@@ -34,9 +35,7 @@ export function NoticePopup() {
         <h3 id="notice-title">{getLocalizedNoticeTitle(notice, language)}</h3>
         <p>{getLocalizedNoticeMessage(notice, language)}</p>
       </div>
-      <button className="notice-close" type="button" onClick={closeNotice} aria-label={t("noticeKicker")}>
-        ×
-      </button>
+      <button className="notice-close" type="button" onClick={closeNotice} aria-label={t("noticeKicker")}>×</button>
     </aside>
   );
 }

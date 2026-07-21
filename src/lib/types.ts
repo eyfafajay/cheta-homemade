@@ -2,14 +2,12 @@ export type SiteLanguage = "en" | "ms";
 
 export type Category = {
   id: string;
-  name: string;
   slug: string;
-  description: string;
-  nameEn?: string;
-  nameMs?: string;
-  descriptionEn?: string;
-  descriptionMs?: string;
-  sortOrder?: number;
+  nameMs: string;
+  nameEn: string;
+  descriptionMs: string;
+  descriptionEn: string;
+  sortOrder: number;
 };
 
 export type ProductOption = {
@@ -17,21 +15,18 @@ export type ProductOption = {
   label: string;
   price: number;
   notes?: string;
-  labelEn?: string;
-  labelMs?: string;
-  notesEn?: string;
-  notesMs?: string;
+  sortOrder?: number;
 };
 
 export type Product = {
   id: string;
+  categoryId: string;
   categorySlug: string;
-  name: string;
-  description: string;
-  nameEn?: string;
-  nameMs?: string;
-  descriptionEn?: string;
-  descriptionMs?: string;
+  nameMs: string;
+  nameEn: string;
+  descriptionMs: string;
+  descriptionEn: string;
+  imagePath?: string;
   imageUrl?: string;
   isAvailable: boolean;
   isFeatured: boolean;
@@ -40,29 +35,25 @@ export type Product = {
 
 export type Notice = {
   id: string;
-  title: string;
-  message: string;
-  titleEn?: string;
-  titleMs?: string;
-  messageEn?: string;
-  messageMs?: string;
+  titleMs: string;
+  titleEn: string;
+  messageMs: string;
+  messageEn: string;
   isActive: boolean;
   startDate?: string;
   endDate?: string;
 };
 
 export type ContactSettings = {
+  id?: string;
   whatsappNumber: string;
   phoneNumber: string;
   instagramUrl: string;
   facebookUrl: string;
-  pickupArea: string;
-  businessHours: string;
-  orderInstructions: string;
-  pickupAreaEn?: string;
-  pickupAreaMs?: string;
-  businessHoursEn?: string;
-  businessHoursMs?: string;
-  orderInstructionsEn?: string;
-  orderInstructionsMs?: string;
+  pickupAreaMs: string;
+  pickupAreaEn: string;
+  businessHoursMs: string;
+  businessHoursEn: string;
+  orderInstructionsMs: string;
+  orderInstructionsEn: string;
 };

@@ -1,13 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import {
-  getCategories,
-  getProducts,
-  saveCategories,
-  saveProducts,
-  slugify
-} from "@/lib/local-store";
+import { deleteCategory, fetchCategories, saveCategory, updateCategoryOrder } from "@/lib/data";
+import { slugify } from "@/lib/utils";
 import type { Category } from "@/lib/types";
 
 export function CategoriesAdminClient() {
@@ -17,17 +12,17 @@ export function CategoriesAdminClient() {
   const [descriptionMs, setDescriptionMs] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  useEffect(() => {
-    setCategories(getCategories());
-  }, []);
-
-  function persistCategories(nextCategories: Category[]) {
-    const orderedCategories = nextCategories.map((category, index) => ({ ...category, sortOrder: index }));
-    saveCategories(orderedCategories);
-    setCategories(orderedCategories);
+  async function reload() {
+    setCategories(await fetchCategories());
   }
+
+  useEffect(() => {
+    void reload().catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Unable to load categories."));
+  }, []);
 
   function resetForm() {
     setNameMs("");
@@ -35,76 +30,71 @@ export function CategoriesAdminClient() {
     setDescriptionMs("");
     setDescriptionEn("");
     setEditingCategory(null);
+    setError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const slugSource = nameEn || nameMs;
-    const nextSlug = slugify(slugSource);
-
-    const category: Category = {
-      id: editingCategory?.id ?? `cat-${nextSlug}`,
-      name: nameMs || nameEn,
-      slug: nextSlug,
-      description: descriptionMs || descriptionEn,
-      nameMs,
-      nameEn,
-      descriptionMs,
-      descriptionEn,
-      sortOrder: editingCategory?.sortOrder ?? categories.length
-    };
-
-    if (editingCategory) {
-      const oldSlug = editingCategory.slug;
-      const updatedCategories = categories.map((item) =>
-        item.id === editingCategory.id ? category : item
-      );
-      persistCategories(updatedCategories);
-
-      if (oldSlug !== nextSlug) {
-        const updatedProducts = getProducts().map((product) =>
-          product.categorySlug === oldSlug
-            ? { ...product, categorySlug: nextSlug }
-            : product
-        );
-        saveProducts(updatedProducts);
-      }
-    } else {
-      const withoutDuplicate = categories.filter((item) => item.slug !== category.slug);
-      persistCategories([...withoutDuplicate, category]);
+    setSaving(true);
+    setError("");
+    try {
+      const slug = slugify(nameEn || nameMs);
+      if (!slug) throw new Error("Please enter a valid category name.");
+      await saveCategory({
+        id: editingCategory?.id,
+        slug,
+        nameMs,
+        nameEn,
+        descriptionMs,
+        descriptionEn,
+        sortOrder: editingCategory?.sortOrder ?? categories.length
+      });
+      await reload();
+      resetForm();
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Unable to save category.");
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   }
 
   function handleEdit(category: Category) {
     setEditingCategory(category);
-    setNameMs(category.nameMs || category.name);
-    setNameEn(category.nameEn || category.name);
-    setDescriptionMs(category.descriptionMs || category.description);
-    setDescriptionEn(category.descriptionEn || category.description);
-
-    window.requestAnimationFrame(() => {
-      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    setNameMs(category.nameMs);
+    setNameEn(category.nameEn);
+    setDescriptionMs(category.descriptionMs);
+    setDescriptionEn(category.descriptionEn);
+    setError("");
+    window.requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
-  function handleDelete(categorySlug: string) {
-    const confirmed = confirm("Delete this category? Products under this category will not be deleted, but may appear uncategorized.");
+  async function handleDelete(category: Category) {
+    const confirmed = confirm("Delete this category? A category that still contains products cannot be deleted.");
     if (!confirmed) return;
-    persistCategories(categories.filter((category) => category.slug !== categorySlug));
-
-    if (editingCategory?.slug === categorySlug) {
-      resetForm();
+    setError("");
+    try {
+      await deleteCategory(category.id);
+      if (editingCategory?.id === category.id) resetForm();
+      await reload();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete category.");
     }
   }
 
-  function moveCategory(index: number, direction: -1 | 1) {
+  async function moveCategory(index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= categories.length) return;
     const nextCategories = [...categories];
     [nextCategories[index], nextCategories[targetIndex]] = [nextCategories[targetIndex], nextCategories[index]];
-    persistCategories(nextCategories);
+    setCategories(nextCategories.map((category, categoryIndex) => ({ ...category, sortOrder: categoryIndex })));
+    setError("");
+    try {
+      await updateCategoryOrder(nextCategories);
+      await reload();
+    } catch (moveError) {
+      setError(moveError instanceof Error ? moveError.message : "Unable to rearrange categories.");
+      await reload();
+    }
   }
 
   return (
@@ -114,6 +104,7 @@ export function CategoriesAdminClient() {
         <p className="prototype-note">
           Enter both languages. Customers will see the matching category name and description when they choose BM or EN.
         </p>
+        {error ? <p className="prototype-note" role="alert">{error}</p> : null}
         <div className="form-grid two">
           <label>
             Category name (Bahasa Melayu)
@@ -133,14 +124,10 @@ export function CategoriesAdminClient() {
           </label>
         </div>
         <div className="category-form-actions">
-          <button className="btn btn-primary" type="submit">
-            {editingCategory ? "Update category" : "Save category"}
+          <button className="btn btn-primary" type="submit" disabled={saving}>
+            {saving ? "Saving..." : editingCategory ? "Update category" : "Save category"}
           </button>
-          {editingCategory ? (
-            <button className="btn btn-secondary" type="button" onClick={resetForm}>
-              Cancel edit
-            </button>
-          ) : null}
+          {editingCategory ? <button className="btn btn-secondary" type="button" onClick={resetForm}>Cancel edit</button> : null}
         </div>
       </form>
 
@@ -156,34 +143,16 @@ export function CategoriesAdminClient() {
             <div className="stat-card category-order-card" key={category.id}>
               <div className="category-order-number" aria-label={`Position ${index + 1}`}>{index + 1}</div>
               <div className="category-order-content">
-                <strong style={{ fontSize: "1.3rem" }}>{category.nameMs || category.name}</strong>
-                <p className="muted" style={{ marginBottom: 6 }}>{category.nameEn || category.name} · /{category.slug}</p>
-                <p><strong>BM:</strong> {category.descriptionMs || category.description}</p>
-                <p><strong>EN:</strong> {category.descriptionEn || category.description}</p>
+                <strong style={{ fontSize: "1.3rem" }}>{category.nameMs}</strong>
+                <p className="muted" style={{ marginBottom: 6 }}>{category.nameEn} · /{category.slug}</p>
+                <p><strong>BM:</strong> {category.descriptionMs}</p>
+                <p><strong>EN:</strong> {category.descriptionEn}</p>
               </div>
               <div className="category-order-actions">
-                <button
-                  className="btn btn-secondary btn-small"
-                  type="button"
-                  onClick={() => moveCategory(index, -1)}
-                  disabled={index === 0}
-                  aria-label={`Move ${category.name} up`}
-                >
-                  ↑ Up
-                </button>
-                <button
-                  className="btn btn-secondary btn-small"
-                  type="button"
-                  onClick={() => moveCategory(index, 1)}
-                  disabled={index === categories.length - 1}
-                  aria-label={`Move ${category.name} down`}
-                >
-                  ↓ Down
-                </button>
-                <button className="btn btn-secondary btn-small" type="button" onClick={() => handleEdit(category)}>
-                  Edit
-                </button>
-                <button className="btn btn-danger btn-small" type="button" onClick={() => handleDelete(category.slug)}>Delete</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => moveCategory(index, -1)} disabled={index === 0}>↑ Up</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => moveCategory(index, 1)} disabled={index === categories.length - 1}>↓ Down</button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => handleEdit(category)}>Edit</button>
+                <button className="btn btn-danger btn-small" type="button" onClick={() => handleDelete(category)}>Delete</button>
               </div>
             </div>
           ))}

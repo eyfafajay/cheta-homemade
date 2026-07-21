@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import type { Product } from "@/lib/types";
-import { getLocalizedProductDescription, getLocalizedProductName, getProductStartingPrice } from "@/lib/local-store";
+import {
+  getLocalizedProductDescription,
+  getLocalizedProductName,
+  getProductStartingPrice
+} from "@/lib/utils";
 import { useLanguage } from "./LanguageProvider";
 
 export function ProductCard({ product, categoryName }: { product: Product; categoryName?: string }) {
@@ -30,9 +34,7 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
         <p className="product-description">{productDescription}</p>
         <p className="price">{priceLabel}</p>
         <div className="card-actions">
-          <Link className="btn btn-primary" href={`/products/item/${product.id}`}>
-            {t("viewDetails")}
-          </Link>
+          <Link className="btn btn-primary" href={`/products/item/${product.id}`}>{t("viewDetails")}</Link>
         </div>
       </div>
     </article>

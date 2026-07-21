@@ -10,8 +10,6 @@ type LanguageContextValue = {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: TranslationKey) => string;
-  getCategoryLabel: (slug: string) => string;
-  getCategoryDescription: (slug: string, fallback?: string) => string;
 };
 
 const STORAGE_KEY = "cheta_language";
@@ -23,10 +21,6 @@ const translations = {
     navProducts: "Products",
     navContact: "Contact",
     navAllProducts: "All products",
-    navCakes: "Cakes",
-    navDesserts: "Desserts",
-    navRoti: "Bun",
-    navCraft: "Craft",
     languageLabel: "Language",
     menuLabel: "Menu",
     heroEyebrow: "Fresh homemade orders",
@@ -39,10 +33,6 @@ const translations = {
     showcaseTitle: "Freshly made treats for every occasion.",
     showcaseBody:
       "Customers can explore products by category, check prices, and contact Cheta Homemade through WhatsApp for orders and any enquiries.",
-    showcaseCakesDesc: "Whole cakes and special bakes",
-    showcaseDessertsDesc: "Sweet bites for gatherings and gifts",
-    showcaseRotiDesc: "Soft homemade buns and savoury breads",
-    showcaseCraftDesc: "Handmade items and gifts",
     categoriesEyebrow: "Categories",
     categoriesTitle: "Find what you are looking for",
     categoriesLead: "Browse the menu by category and choose the items that suit your event or daily craving.",
@@ -89,10 +79,6 @@ const translations = {
     navProducts: "Produk",
     navContact: "Hubungi",
     navAllProducts: "Semua produk",
-    navCakes: "Kek",
-    navDesserts: "Pencuci mulut",
-    navRoti: "Roti",
-    navCraft: "Kraf",
     languageLabel: "Bahasa",
     menuLabel: "Menu",
     heroEyebrow: "Tempahan homemade",
@@ -105,10 +91,6 @@ const translations = {
     showcaseTitle: "Hidangan segar yang dibuat khas untuk setiap majlis.",
     showcaseBody:
       "Pelanggan boleh melihat produk mengikut kategori, semak harga, dan terus hubungi Cheta Homemade melalui WhatsApp untuk tempahan atau sebarang pertanyaan.",
-    showcaseCakesDesc: "Kek penuh dan kek istimewa",
-    showcaseDessertsDesc: "Manisan untuk majlis dan hadiah",
-    showcaseRotiDesc: "Roti lembut dan roti berperisa",
-    showcaseCraftDesc: "Item kraf dan hadiah buatan tangan",
     categoriesEyebrow: "Kategori",
     categoriesTitle: "Cari apa yang anda perlukan",
     categoriesLead: "Lihat menu mengikut kategori dan pilih item yang sesuai untuk majlis atau keinginan harian anda.",
@@ -151,36 +133,6 @@ const translations = {
   }
 } as const;
 
-const categoryLabels: Record<Language, Record<string, string>> = {
-  en: {
-    kek: "Cakes",
-    desserts: "Desserts",
-    roti: "Bun",
-    craft: "Craft"
-  },
-  ms: {
-    kek: "Kek",
-    desserts: "Pencuci mulut",
-    roti: "Roti",
-    craft: "Kraf"
-  }
-};
-
-const categoryDescriptions: Record<Language, Record<string, string>> = {
-  en: {
-    kek: "Homemade cakes for birthdays, family events, and sweet celebrations.",
-    desserts: "Creamy, fruity, and bite-sized desserts that are easy to share.",
-    roti: "Soft homemade buns and savoury breads for everyday treats.",
-    craft: "Handmade craft items that can be updated later by admin."
-  },
-  ms: {
-    kek: "Kek homemade untuk hari lahir, majlis keluarga, dan sambutan istimewa.",
-    desserts: "Pencuci mulut yang creamy, fruity, dan mudah dikongsi bersama keluarga atau tetamu.",
-    roti: "Roti homemade yang lembut dan bun savouri untuk sajian harian.",
-    craft: "Item kraf buatan tangan yang boleh dikemas kini oleh admin kemudian."
-  }
-};
-
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
@@ -203,9 +155,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<LanguageContextValue>(() => ({
     language,
     setLanguage: setLanguageState,
-    t: (key) => translations[language][key] ?? translations.en[key],
-    getCategoryLabel: (slug) => categoryLabels[language][slug] ?? slug,
-    getCategoryDescription: (slug, fallback) => categoryDescriptions[language][slug] ?? fallback ?? slug
+    t: (key) => translations[language][key] ?? translations.en[key]
   }), [language]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
