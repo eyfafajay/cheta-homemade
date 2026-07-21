@@ -85,7 +85,7 @@ const translations = {
   },
   ms: {
     brandTagline: "Kek • Pencuci mulut • Kraf",
-    navHome: "Utama",
+    navHome: "Laman Utama",
     navProducts: "Produk",
     navContact: "Hubungi",
     navAllProducts: "Semua produk",
