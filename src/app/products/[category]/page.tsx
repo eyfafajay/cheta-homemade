@@ -1,20 +1,29 @@
+"use client";
+
+import { use } from "react";
 import { Header } from "@/components/customer/Header";
 import { Footer } from "@/components/customer/Footer";
 import { NoticePopup } from "@/components/customer/NoticePopup";
 import { ProductGridClient } from "@/components/customer/ProductGridClient";
+import { useLanguage } from "@/components/customer/LanguageProvider";
 
-export default function CategoryPage({ params }: { params: { category: string } }) {
+export default function CategoryPage({
+  params
+}: {
+  params: Promise<{ category: string }>;
+}) {
+  const { category } = use(params);
+  const { getCategoryLabel, t } = useLanguage();
+
   return (
     <>
       <Header />
       <NoticePopup />
       <main className="container section">
-        <span className="eyebrow">🛍️ Category</span>
-        <h1 style={{ textTransform: "capitalize" }}>{params.category.replaceAll("-", " ")}</h1>
-        <p className="lead">
-          Browse items under this category. Product data can be managed by admin later.
-        </p>
-        <ProductGridClient categorySlug={params.category} />
+        <span className="eyebrow">{t("categoryEyebrow")}</span>
+        <h1>{getCategoryLabel(category)}</h1>
+        <p className="lead">{t("categoryLead")}</p>
+        <ProductGridClient categorySlug={category} />
       </main>
       <Footer />
     </>

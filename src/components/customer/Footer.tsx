@@ -1,9 +1,17 @@
+"use client";
+
+import { useLanguage } from "./LanguageProvider";
+
 export function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="footer">
-      <div className="container">
-        <strong>Cheta Homemade</strong>
-        <p>Homemade cakes, pastries, desserts, roti, and crafts made with love.</p>
+      <div className="container footer-inner">
+        <div>
+          <strong>Cheta Homemade</strong>
+          <p>{t("footerBody")}</p>
+        </div>
       </div>
     </footer>
   );

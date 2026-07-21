@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { getCategories, getProducts } from "@/lib/local-store";
 import type { Category, Product } from "@/lib/types";
 import { ProductCard } from "./ProductCard";
+import { useLanguage } from "./LanguageProvider";
 
 export function ProductGridClient({ categorySlug, featuredOnly = false }: { categorySlug?: string; featuredOnly?: boolean }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const { getCategoryLabel, t } = useLanguage();
 
   useEffect(() => {
     setProducts(getProducts());
@@ -23,14 +25,14 @@ export function ProductGridClient({ categorySlug, featuredOnly = false }: { cate
   }, [products, categorySlug, featuredOnly]);
 
   const categoryMap = useMemo(() => {
-    return Object.fromEntries(categories.map((category) => [category.slug, category.name]));
-  }, [categories]);
+    return Object.fromEntries(categories.map((category) => [category.slug, getCategoryLabel(category.slug)]));
+  }, [categories, getCategoryLabel]);
 
   return (
     <>
       <div className="filter-bar">
         <Link className={!categorySlug ? "active" : ""} href="/products">
-          All
+          {t("allFilter")}
         </Link>
         {categories.map((category) => (
           <Link
@@ -38,7 +40,7 @@ export function ProductGridClient({ categorySlug, featuredOnly = false }: { cate
             href={`/products/${category.slug}`}
             key={category.id}
           >
-            {category.name}
+            {getCategoryLabel(category.slug)}
           </Link>
         ))}
       </div>
@@ -51,8 +53,8 @@ export function ProductGridClient({ categorySlug, featuredOnly = false }: { cate
         </div>
       ) : (
         <div className="empty-state">
-          <h3>No products yet</h3>
-          <p>Admin can add products to this category later.</p>
+          <h3>{t("noProductsTitle")}</h3>
+          <p>{t("noProductsBody")}</p>
         </div>
       )}
     </>

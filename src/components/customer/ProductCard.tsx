@@ -3,8 +3,12 @@
 import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { getProductStartingPrice } from "@/lib/local-store";
+import { useLanguage } from "./LanguageProvider";
 
 export function ProductCard({ product, categoryName }: { product: Product; categoryName?: string }) {
+  const { t } = useLanguage();
+  const priceLabel = getProductStartingPrice(product).replace(/^From/, t("from"));
+
   return (
     <article className="product-card">
       <Link href={`/products/item/${product.id}`}>
@@ -17,15 +21,15 @@ export function ProductCard({ product, categoryName }: { product: Product; categ
         <div className="badge-row">
           <span className="badge badge-pink">{categoryName ?? product.categorySlug}</span>
           <span className={`badge ${product.isAvailable ? "badge-green" : "badge-muted"}`}>
-            {product.isAvailable ? "Available" : "Unavailable"}
+            {product.isAvailable ? t("available") : t("unavailable")}
           </span>
         </div>
         <h3>{product.name}</h3>
         <p className="product-description">{product.description}</p>
-        <p className="price">{getProductStartingPrice(product)}</p>
+        <p className="price">{priceLabel}</p>
         <div className="card-actions">
           <Link className="btn btn-primary" href={`/products/item/${product.id}`}>
-            View details
+            {t("viewDetails")}
           </Link>
         </div>
       </div>

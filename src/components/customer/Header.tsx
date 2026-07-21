@@ -1,55 +1,149 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "./LanguageProvider";
 
 export function Header() {
+  const { language, setLanguage, t } = useLanguage();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const productsDropdownRef = useRef<HTMLDetailsElement>(null);
+
+  function closeProductsDropdown() {
+    productsDropdownRef.current?.removeAttribute("open");
+  }
+
+  function closeNavigation() {
+    setMenuOpen(false);
+    closeProductsDropdown();
+  }
+
+  useEffect(() => {
+    function handleOutsideClick(event: PointerEvent) {
+      const target = event.target as Node;
+
+      if (!productsDropdownRef.current?.contains(target)) {
+        productsDropdownRef.current?.removeAttribute("open");
+      }
+
+      if (!navRef.current?.contains(target) && !menuButtonRef.current?.contains(target)) {
+        setMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        productsDropdownRef.current?.removeAttribute("open");
+      }
+    }
+
+    document.addEventListener("pointerdown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   return (
-    <header className="site-header">
+    <header className="site-header" ref={headerRef}>
       <div className="container navbar">
-        <Link className="brand" href="/">
+        <Link className="brand" href="/" onClick={closeNavigation}>
           <span className="brand-mark">CH</span>
           <span>
             Cheta Homemade
-            <small>Cakes • Pastries • Craft</small>
+            <small>{t("brandTagline")}</small>
           </span>
         </Link>
 
-        <nav className="nav-links" aria-label="Main navigation">
-          <Link href="/">Home</Link>
+        <div className="header-tools">
+          <div className="language-switch" role="group" aria-label={t("languageLabel")}>
+            <button
+              type="button"
+              className={language === "en" ? "active" : ""}
+              onClick={() => {
+                setLanguage("en");
+                closeProductsDropdown();
+              }}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={language === "ms" ? "active" : ""}
+              onClick={() => {
+                setLanguage("ms");
+                closeProductsDropdown();
+              }}
+            >
+              BM
+            </button>
+          </div>
 
-          <details className="nav-dropdown">
+          <button
+            type="button"
+            className="menu-toggle"
+            ref={menuButtonRef}
+            aria-expanded={menuOpen}
+            aria-controls="main-navigation"
+            aria-label={t("menuLabel")}
+            onClick={() => {
+              setMenuOpen((value) => !value);
+              closeProductsDropdown();
+            }}
+          >
+            <span className="menu-icon" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <strong>{t("menuLabel")}</strong>
+          </button>
+        </div>
+
+        <nav className={`nav-links ${menuOpen ? "open" : ""}`} id="main-navigation" aria-label="Main navigation" ref={navRef}>
+          <Link href="/" onClick={closeNavigation}>{t("navHome")}</Link>
+
+          <details className="nav-dropdown" ref={productsDropdownRef}>
             <summary>
-              <span>Products</span>
+              <span>{t("navProducts")}</span>
               <span className="dropdown-chevron" aria-hidden="true" />
             </summary>
 
             <div className="dropdown-menu">
-              <Link href="/products">
+              <Link href="/products" onClick={closeNavigation}>
                 <span className="dropdown-icon dropdown-icon-all" aria-hidden="true" />
-                <span>All products</span>
+                <span>{t("navAllProducts")}</span>
               </Link>
 
-              <Link href="/products/kek">
+              <Link href="/products/kek" onClick={closeNavigation}>
                 <span className="dropdown-icon dropdown-icon-cakes" aria-hidden="true" />
-                <span>Cakes</span>
+                <span>{t("navCakes")}</span>
               </Link>
 
-              <Link href="/products/desserts">
+              <Link href="/products/desserts" onClick={closeNavigation}>
                 <span className="dropdown-icon dropdown-icon-desserts" aria-hidden="true" />
-                <span>Desserts</span>
+                <span>{t("navDesserts")}</span>
               </Link>
 
-              <Link href="/products/roti">
+              <Link href="/products/roti" onClick={closeNavigation}>
                 <span className="dropdown-icon dropdown-icon-roti" aria-hidden="true" />
-                <span>Roti</span>
+                <span>{t("navRoti")}</span>
               </Link>
 
-              <Link href="/products/craft">
+              <Link href="/products/craft" onClick={closeNavigation}>
                 <span className="dropdown-icon dropdown-icon-craft" aria-hidden="true" />
-                <span>Craft</span>
+                <span>{t("navCraft")}</span>
               </Link>
             </div>
           </details>
 
-          <Link href="/contact">Contact</Link>
+          <Link href="/contact" onClick={closeNavigation}>{t("navContact")}</Link>
         </nav>
       </div>
     </header>
