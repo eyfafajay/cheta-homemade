@@ -1,7 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { getCategories, saveCategories, slugify } from "@/lib/local-store";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  getCategories,
+  getProducts,
+  saveCategories,
+  saveProducts,
+  slugify
+} from "@/lib/local-store";
 import type { Category } from "@/lib/types";
 
 export function CategoriesAdminClient() {
@@ -10,6 +16,8 @@ export function CategoriesAdminClient() {
   const [nameEn, setNameEn] = useState("");
   const [descriptionMs, setDescriptionMs] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     setCategories(getCategories());
@@ -21,32 +29,74 @@ export function CategoriesAdminClient() {
     setCategories(orderedCategories);
   }
 
+  function resetForm() {
+    setNameMs("");
+    setNameEn("");
+    setDescriptionMs("");
+    setDescriptionEn("");
+    setEditingCategory(null);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const slugSource = nameEn || nameMs;
+    const nextSlug = slugify(slugSource);
+
     const category: Category = {
-      id: `cat-${slugify(slugSource)}`,
+      id: editingCategory?.id ?? `cat-${nextSlug}`,
       name: nameMs || nameEn,
-      slug: slugify(slugSource),
+      slug: nextSlug,
       description: descriptionMs || descriptionEn,
       nameMs,
       nameEn,
       descriptionMs,
       descriptionEn,
-      sortOrder: categories.length
+      sortOrder: editingCategory?.sortOrder ?? categories.length
     };
-    const withoutDuplicate = categories.filter((item) => item.slug !== category.slug);
-    persistCategories([...withoutDuplicate, category]);
-    setNameMs("");
-    setNameEn("");
-    setDescriptionMs("");
-    setDescriptionEn("");
+
+    if (editingCategory) {
+      const oldSlug = editingCategory.slug;
+      const updatedCategories = categories.map((item) =>
+        item.id === editingCategory.id ? category : item
+      );
+      persistCategories(updatedCategories);
+
+      if (oldSlug !== nextSlug) {
+        const updatedProducts = getProducts().map((product) =>
+          product.categorySlug === oldSlug
+            ? { ...product, categorySlug: nextSlug }
+            : product
+        );
+        saveProducts(updatedProducts);
+      }
+    } else {
+      const withoutDuplicate = categories.filter((item) => item.slug !== category.slug);
+      persistCategories([...withoutDuplicate, category]);
+    }
+
+    resetForm();
+  }
+
+  function handleEdit(category: Category) {
+    setEditingCategory(category);
+    setNameMs(category.nameMs || category.name);
+    setNameEn(category.nameEn || category.name);
+    setDescriptionMs(category.descriptionMs || category.description);
+    setDescriptionEn(category.descriptionEn || category.description);
+
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function handleDelete(categorySlug: string) {
     const confirmed = confirm("Delete this category? Products under this category will not be deleted, but may appear uncategorized.");
     if (!confirmed) return;
     persistCategories(categories.filter((category) => category.slug !== categorySlug));
+
+    if (editingCategory?.slug === categorySlug) {
+      resetForm();
+    }
   }
 
   function moveCategory(index: number, direction: -1 | 1) {
@@ -59,8 +109,8 @@ export function CategoriesAdminClient() {
 
   return (
     <div className="admin-dashboard-grid">
-      <form className="form-card" onSubmit={handleSubmit}>
-        <h3>Add category</h3>
+      <form className="form-card" onSubmit={handleSubmit} ref={formRef}>
+        <h3>{editingCategory ? "Edit category" : "Add category"}</h3>
         <p className="prototype-note">
           Enter both languages. Customers will see the matching category name and description when they choose BM or EN.
         </p>
@@ -82,7 +132,16 @@ export function CategoriesAdminClient() {
             <textarea value={descriptionEn} onChange={(event) => setDescriptionEn(event.target.value)} required placeholder="Short category description" />
           </label>
         </div>
-        <button className="btn btn-primary" type="submit">Save category</button>
+        <div className="category-form-actions">
+          <button className="btn btn-primary" type="submit">
+            {editingCategory ? "Update category" : "Save category"}
+          </button>
+          {editingCategory ? (
+            <button className="btn btn-secondary" type="button" onClick={resetForm}>
+              Cancel edit
+            </button>
+          ) : null}
+        </div>
       </form>
 
       <div className="table-card">
@@ -120,6 +179,9 @@ export function CategoriesAdminClient() {
                   aria-label={`Move ${category.name} down`}
                 >
                   ↓ Down
+                </button>
+                <button className="btn btn-secondary btn-small" type="button" onClick={() => handleEdit(category)}>
+                  Edit
                 </button>
                 <button className="btn btn-danger btn-small" type="button" onClick={() => handleDelete(category.slug)}>Delete</button>
               </div>

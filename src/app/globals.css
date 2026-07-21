@@ -1668,3 +1668,28 @@ button:disabled,
   position: relative;
   z-index: 1;
 }
+
+/* Category admin form spacing and edit controls */
+.category-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+@media (max-width: 760px) {
+  .category-form-actions .btn {
+    width: 100%;
+  }
+
+  .category-order-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .category-order-actions {
+    grid-template-columns: 1fr;
+  }
+}
